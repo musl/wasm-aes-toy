@@ -26,8 +26,12 @@
 	<body id="app">
 		<div>
 			<label for="key">key</label><br/>
-			<input type="text" id="key" size="32" />
-			<input type="button" value="generate" onclick="generate('key')"/>
+			<textarea id="key" rows="3" cols="80"></textarea>
+		</div>
+		<div>
+			<button onclick="generate('key', 16)">generate 128-bit key</button>
+			<button onclick="generate('key', 24)">generate 192-bit key</button>
+			<button onclick="generate('key', 32)">generate 256-bit key</button>
 		</div>
 		<div>
 			<label for="plaintext">plain text</label><br/>
@@ -42,6 +46,9 @@
 		</div>
 		<div>
 			<input type="button" value="decrypt" onclick="decrypt('key', 'ciphertext', 'plaintext')"/>
+		</div>
+		<div>
+			<p id="error" class="error"></p>
 		</div>
 	</body>
 </html>
