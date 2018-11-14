@@ -1,7 +1,7 @@
 # WASM AES Toy
 A wasm golang demo and toy.
 
-## Building
+## Running the demo
 run `make`
 
 ## Contributing
