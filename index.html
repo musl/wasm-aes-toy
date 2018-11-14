@@ -1,16 +1,39 @@
 <!doctype html>
 <html>
 	<head>
+		<title>WASM AES Demo</title>
 		<meta charset="utf-8">
 		<script src="wasm_exec.js"></script>
 		<script>
-			const go = new Go();
+			// Polyfill
+			if (!WebAssembly.instantiateStreaming) {
+				WebAssembly.instantiateStreaming = async (resp, importObject) => {
+					const source = await (await resp).arrayBuffer();
+					return await WebAssembly.instantiate(source, importObject);
+				};
+			}
 
-			WebAssembly.instantiateStreaming(fetch("main.wasm"),
-				go.importObject).then((result) => {
-					go.run(result.instance);
-				});
+			const go = new Go();
+			const wasm = "main.wasm";
+
+			(async function() {
+				const { instance } = await WebAssembly.instantiateStreaming(fetch(wasm), go.importObject);
+				run = go.run(instance);
+			})();
 		</script>
 	</head>
-	<body></body>
+	<body id="app">
+		<input type="text" id="key" size="32" />
+		<input type="button" value="generate" onclick="generate('key')"/>
+		<div>
+			<label for="plaintext">plain text</label><br>
+			<textarea id="plaintext" rows="10" cols="80"></textarea>
+		</div>
+		<input type="button" value="encrypt" onclick="encrypt('key', 'plaintext', 'ciphertext')"/>
+		<input type="button" value="decrypt" onclick="decrypt('key', 'ciphertext', 'plaintext')"/>
+		<div>
+			<label for="ciphertext">cipher text</label><br>
+			<textarea id="ciphertext" rows="10" cols="80"></textarea>
+		</div>
+	</body>
 </html>
