@@ -1,16 +1,13 @@
 BIN := main.wasm
 
-.PHONY: all build clean run test
+.PHONY: all build clean run
 
-all: test
+all: serve
 
 clean:
 	go clean .
 	rm -f *.png *.out *.wasm
 	rm -fr build
-
-test:
-	go test .
 
 run:
 	GOOS=js GOARCH=wasm go run -exec="$(shell go env GOROOT)/misc/wasm/go_js_wasm_exec" .
