@@ -68,6 +68,7 @@ func handleEncrypt(args []js.Value) {
 		log.Printf(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
 		return
 	}
+
 	doc := js.Global().Get("document")
 	b64key := doc.Call("getElementById", args[0].String()).Get("value").String()
 	plaintext := doc.Call("getElementById", args[1].String()).Get("value").String()
