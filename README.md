@@ -1,5 +1,5 @@
-# AES Toy
-This is a wasm demo. It's not meant to be anything but a go example and toy.
+# WASM AES Toy
+A wasm golang demo and toy.
 
 ## Building
 run `make`
