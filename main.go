@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
 	"syscall/js"
 )
@@ -16,9 +15,11 @@ const (
 	Version = `0.0.1`
 )
 
-func handleGenerate(args []js.Value) {
-	fmt.Println("generate")
+func showError(message string) {
+	js.Global().Get("document").Call("getElementById", "error").Set("value", message)
+}
 
+func handleGenerate(args []js.Value) {
 	if len(args) != 1 {
 		// TODO we need some mechanism to show errors.
 		return
@@ -142,8 +143,6 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 }
 
 func main() {
-	fmt.Println("main")
-
 	unload := make(chan struct{})
 
 	gcb := js.NewCallback(handleGenerate)
@@ -164,7 +163,5 @@ func main() {
 	defer bu.Release()
 	js.Global().Get("addEventListener").Invoke("beforeunload", bu)
 
-	fmt.Println("waiting")
 	<-unload
-	fmt.Println("main exiting")
 }

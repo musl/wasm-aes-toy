@@ -1,0 +1,11 @@
+html, body {
+	font-family: sans-serif;
+}
+
+label {
+	line-height: 3em;
+}
+
+.error {
+	color: #ff0000;
+}

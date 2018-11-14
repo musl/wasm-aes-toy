@@ -1,10 +1,13 @@
 BIN := main.wasm
 
+.PHONY: all build clean run test
+
 all: test
 
 clean:
 	go clean .
 	rm -f *.png *.out *.wasm
+	rm -fr build
 
 test:
 	go test .
@@ -15,9 +18,12 @@ run:
 $(BIN):
 	GOOS=js GOARCH=wasm go build -o $@ .
 
-wasm_exec.js:
-	cp "$(shell go env GOROOT)/misc/wasm/wasm_exec.js" .
+build: clean $(BIN)
+	mkdir -p build
+	cp "$(shell go env GOROOT)/misc/wasm/wasm_exec.js" build/
+	cp static/* build/
+	cp $(BIN) build/
 
-serve: wasm_exec.js $(BIN)
+serve: build
 	go run tools/serve.go
 

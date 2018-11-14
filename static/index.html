@@ -21,19 +21,27 @@
 				run = go.run(instance);
 			})();
 		</script>
+		<link rel="stylesheet" href="style.css" type="text/css" />
 	</head>
 	<body id="app">
-		<input type="text" id="key" size="32" />
-		<input type="button" value="generate" onclick="generate('key')"/>
 		<div>
-			<label for="plaintext">plain text</label><br>
+			<label for="key">key</label><br/>
+			<input type="text" id="key" size="32" />
+			<input type="button" value="generate" onclick="generate('key')"/>
+		</div>
+		<div>
+			<label for="plaintext">plain text</label><br/>
 			<textarea id="plaintext" rows="10" cols="80"></textarea>
 		</div>
-		<input type="button" value="encrypt" onclick="encrypt('key', 'plaintext', 'ciphertext')"/>
-		<input type="button" value="decrypt" onclick="decrypt('key', 'ciphertext', 'plaintext')"/>
 		<div>
-			<label for="ciphertext">cipher text</label><br>
+			<input type="button" value="encrypt" onclick="encrypt('key', 'plaintext', 'ciphertext')"/>
+		</div>
+		<div>
+			<label for="ciphertext">cipher text</label><br/>
 			<textarea id="ciphertext" rows="10" cols="80"></textarea>
+		</div>
+		<div>
+			<input type="button" value="decrypt" onclick="decrypt('key', 'ciphertext', 'plaintext')"/>
 		</div>
 	</body>
 </html>
