@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"syscall/js"
 )
 
@@ -16,13 +17,9 @@ const (
 	Version = `0.0.1`
 )
 
-func showError(message string) {
-	js.Global().Get("document").Call("getElementById", "error").Set("innerHTML", message)
-}
-
 func handleGenerate(args []js.Value) {
 	if len(args) != 2 {
-		showError(fmt.Sprintf("handleGenerate needs 2 arguments but was given %d", len(args)))
+		log.Printf("handleGenerate needs 2 arguments but was given %d", len(args))
 		return
 	}
 
@@ -32,7 +29,7 @@ func handleGenerate(args []js.Value) {
 
 	n, err := rand.Read(key)
 	if err != nil || n != length {
-		showError(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 	b64key := base64.StdEncoding.EncodeToString(key)
@@ -42,7 +39,7 @@ func handleGenerate(args []js.Value) {
 
 func handleDecrypt(args []js.Value) {
 	if len(args) != 3 {
-		showError(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
+		log.Printf(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
 		return
 	}
 
@@ -53,13 +50,13 @@ func handleDecrypt(args []js.Value) {
 
 	key, err := base64.StdEncoding.DecodeString(b64key)
 	if err != nil {
-		showError(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
 	plaintext, err := decrypt(key, ciphertext)
 	if err != nil {
-		showError(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
@@ -68,7 +65,7 @@ func handleDecrypt(args []js.Value) {
 
 func handleEncrypt(args []js.Value) {
 	if len(args) != 3 {
-		showError(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
+		log.Printf(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
 		return
 	}
 	doc := js.Global().Get("document")
@@ -78,13 +75,13 @@ func handleEncrypt(args []js.Value) {
 
 	key, err := base64.StdEncoding.DecodeString(b64key)
 	if err != nil {
-		showError(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
 	ciphertext, err := encrypt(key, plaintext)
 	if err != nil {
-		showError(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
@@ -145,6 +142,8 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 }
 
 func main() {
+	log.Printf("AES Toy Version v%s", Version)
+
 	unload := make(chan struct{})
 
 	gcb := js.NewCallback(handleGenerate)
