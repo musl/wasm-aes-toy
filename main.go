@@ -17,10 +17,10 @@ const (
 	Version = `0.0.1`
 )
 
-func handleGenerate(args []js.Value) {
+func handleGenerate(this js.Value, args []js.Value) interface{} {
 	if len(args) != 2 {
 		log.Printf("handleGenerate needs 2 arguments but was given %d", len(args))
-		return
+		return nil
 	}
 
 	id := args[0].String()
@@ -30,17 +30,19 @@ func handleGenerate(args []js.Value) {
 	n, err := rand.Read(key)
 	if err != nil || n != length {
 		log.Printf(err.Error())
-		return
+		return nil
 	}
 	b64key := base64.StdEncoding.EncodeToString(key)
 
 	js.Global().Get("document").Call("getElementById", id).Set("value", b64key)
+
+	return nil
 }
 
-func handleDecrypt(args []js.Value) {
+func handleDecrypt(this js.Value, args []js.Value) interface{} {
 	if len(args) != 3 {
 		log.Printf(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
-		return
+		return nil
 	}
 
 	doc := js.Global().Get("document")
@@ -51,22 +53,24 @@ func handleDecrypt(args []js.Value) {
 	key, err := base64.StdEncoding.DecodeString(b64key)
 	if err != nil {
 		log.Printf(err.Error())
-		return
+		return nil
 	}
 
 	plaintext, err := decrypt(key, ciphertext)
 	if err != nil {
 		log.Printf(err.Error())
-		return
+		return nil
 	}
 
 	output.Set("value", plaintext)
+
+	return nil
 }
 
-func handleEncrypt(args []js.Value) {
+func handleEncrypt(this js.Value, args []js.Value) interface{} {
 	if len(args) != 3 {
 		log.Printf(fmt.Sprintf("handleEncrypt needs 3 arguments but was given %d", len(args)))
-		return
+		return nil
 	}
 
 	doc := js.Global().Get("document")
@@ -77,16 +81,18 @@ func handleEncrypt(args []js.Value) {
 	key, err := base64.StdEncoding.DecodeString(b64key)
 	if err != nil {
 		log.Printf(err.Error())
-		return
+		return nil
 	}
 
 	ciphertext, err := encrypt(key, plaintext)
 	if err != nil {
 		log.Printf(err.Error())
-		return
+		return nil
 	}
 
 	output.Set("value", ciphertext)
+
+	return nil
 }
 
 func encrypt(key []byte, message string) (encmess string, err error) {
@@ -145,25 +151,27 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 func main() {
 	log.Printf("AES Toy Version v%s", Version)
 
-	unload := make(chan struct{})
-
-	gcb := js.NewCallback(handleGenerate)
+	gcb := js.FuncOf(handleGenerate)
 	defer gcb.Release()
 	js.Global().Set("generate", gcb)
 
-	ecb := js.NewCallback(handleEncrypt)
+	ecb := js.FuncOf(handleEncrypt)
 	defer ecb.Release()
 	js.Global().Set("encrypt", ecb)
 
-	dcb := js.NewCallback(handleDecrypt)
+	dcb := js.FuncOf(handleDecrypt)
 	defer dcb.Release()
 	js.Global().Set("decrypt", dcb)
 
-	bu := js.NewEventCallback(0, func(v js.Value) {
+	/*
+	* Wait for the page to unload.
+	 */
+	unload := make(chan struct{})
+	bu := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		unload <- struct{}{}
+		return nil
 	})
 	defer bu.Release()
 	js.Global().Get("addEventListener").Invoke("beforeunload", bu)
-
 	<-unload
 }
