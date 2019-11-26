@@ -9,13 +9,107 @@ import (
 	"fmt"
 	"io"
 	"log"
+	mrand "math/rand"
+	"strings"
 	"syscall/js"
+	"testing"
+	"time"
 )
 
 const (
 	// Version is this program's semantic version number.
 	Version = `0.0.1`
+
+	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
+
+func randString(n int) string {
+	src := mrand.NewSource(time.Now().UnixNano())
+	sb := strings.Builder{}
+	sb.Grow(n)
+
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			sb.WriteByte(letterBytes[idx])
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return sb.String()
+}
+
+func handleBenchmark(this js.Value, args []js.Value) interface{} {
+
+	// Demo setting flags
+	// testing.Init()
+	// flag.Set("test.benchtime", "1000000x")
+	// flag.Parse()
+
+	encryptBenchmark := func(keyLength, textLength int) func(b *testing.B) {
+		key := generateKey(keyLength)
+		plainText := randString(textLength)
+		return func(b *testing.B) {
+			_, err := encrypt(key, plainText)
+			if err != nil {
+				b.FailNow()
+			}
+		}
+	}
+
+	decryptBenchmark := func(keyLength, textLength int) func(b *testing.B) {
+		key := generateKey(keyLength)
+		plainText := randString(textLength)
+		cipherText, _ := encrypt(key, plainText)
+
+		return func(b *testing.B) {
+			_, err := decrypt(key, cipherText)
+			if err != nil {
+				b.FailNow()
+			}
+		}
+	}
+
+	var results strings.Builder
+	fmt.Fprintln(&results, "Benchmark Results:")
+
+	textLength := 2 * 1024 * 1024
+	keyLengths := []int{16, 24, 32}
+	for _, keyLength := range keyLengths {
+		er := testing.Benchmark(encryptBenchmark(keyLength, textLength))
+		dr := testing.Benchmark(decryptBenchmark(keyLength, textLength))
+		fmt.Fprintf(
+			&results,
+			"%d bit encrypt: %s\n%d bit decrypt: %s\n",
+			keyLength*8,
+			er.String(),
+			keyLength*8,
+			dr.String(),
+		)
+	}
+
+	js.Global().Call("alert", results.String())
+	return nil
+}
+
+func generateKey(length int) []byte {
+	key := make([]byte, length)
+
+	n, err := rand.Read(key)
+	if err != nil || n != length {
+		log.Printf(err.Error())
+		return nil
+	}
+
+	return key
+}
 
 func handleGenerate(this js.Value, args []js.Value) interface{} {
 	if len(args) != 2 {
@@ -25,13 +119,7 @@ func handleGenerate(this js.Value, args []js.Value) interface{} {
 
 	id := args[0].String()
 	length := args[1].Int()
-	key := make([]byte, length)
-
-	n, err := rand.Read(key)
-	if err != nil || n != length {
-		log.Printf(err.Error())
-		return nil
-	}
+	key := generateKey(length)
 	b64key := base64.StdEncoding.EncodeToString(key)
 
 	js.Global().Get("document").Call("getElementById", id).Set("value", b64key)
@@ -162,6 +250,10 @@ func main() {
 	dcb := js.FuncOf(handleDecrypt)
 	defer dcb.Release()
 	js.Global().Set("decrypt", dcb)
+
+	bcb := js.FuncOf(handleBenchmark)
+	defer bcb.Release()
+	js.Global().Set("benchmark", bcb)
 
 	/*
 	* Wait for the page to unload.
